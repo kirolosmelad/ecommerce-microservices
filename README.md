@@ -71,3 +71,13 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](LICENSE).
+
+# To Run Zookeeper in local machine
+
+1. Go To Kafka directory
+2. run `bin/zookeeper-server-start.sh config/zookeeper.properties`
+
+# To Run Kafka in local machine
+
+1. Go To Kafka director
+2. run ` bin/kafka-server-start.sh config/server.properties`
