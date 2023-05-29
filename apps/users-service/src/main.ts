@@ -1,8 +1,28 @@
-import { NestFactory } from '@nestjs/core';
-import { UsersServiceModule } from './users-service.module';
+import { NestFactory } from "@nestjs/core";
+import { UsersServiceModule } from "./users-service.module";
+import { MicroserviceOptions, Transport } from "@nestjs/microservices";
+import { AUTH_SERVICE_GROUP } from "@app/common";
+import { ValidationPipe } from "@nestjs/common";
+import { logLevel } from "@nestjs/microservices/external/kafka.interface";
 
-async function bootstrap() {
-  const app = await NestFactory.create(UsersServiceModule);
-  await app.listen(3000);
-}
-bootstrap();
+(async () => {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    UsersServiceModule,
+    {
+      transport: Transport.KAFKA,
+      options: {
+        client: {
+          brokers: ["localhost:9092"],
+          logLevel: logLevel.ERROR,
+        },
+        consumer: {
+          groupId: AUTH_SERVICE_GROUP,
+        },
+      },
+    }
+  );
+
+  app.useGlobalPipes(new ValidationPipe());
+
+  await app.listen();
+})();
