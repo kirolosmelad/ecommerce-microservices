@@ -13,6 +13,8 @@ import { ConfigService } from "@nestjs/config";
   app.useGlobalPipes(new ValidationPipe());
 
   const configService = app.get<ConfigService>(ConfigService);
-  const port = configService.get<number>("PORT") ?? 3000;
+
+  const port = configService.get<number>("PORT");
+
   await app.listen(port);
 })();

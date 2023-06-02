@@ -10,12 +10,12 @@ import { AuthService } from "./auth.service";
 
 @Module({
   imports: [
-    KafkaModule.registerService(
-      AUTH_SERVICE,
-      AUTH_CLIENT,
-      AUTH_SERVICE_GROUP,
-      true
-    ),
+    KafkaModule.registerService({
+      clientId: AUTH_CLIENT,
+      groupId: AUTH_SERVICE_GROUP,
+      serviceName: AUTH_SERVICE,
+      producerOnly: true,
+    }),
   ],
   controllers: [AuthController],
   providers: [AuthService],

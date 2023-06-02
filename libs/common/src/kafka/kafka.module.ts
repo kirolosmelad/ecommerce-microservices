@@ -1,36 +1,44 @@
 import { DynamicModule, Module } from "@nestjs/common";
-import { ClientKafka, ClientsModule, Transport } from "@nestjs/microservices";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { ClientsModule, Transport } from "@nestjs/microservices";
 import { logLevel } from "@nestjs/microservices/external/kafka.interface";
+
+export interface Options {
+  serviceName: string;
+  clientId: string;
+  groupId: string;
+  producerOnly?: boolean;
+}
 
 @Module({})
 export class KafkaModule {
-  static registerService(
-    serviceName: string,
-    clientId: string,
-    groupId: string,
-    producerOnly: boolean = false
-  ): DynamicModule {
-    return {
-      module: KafkaModule,
-      imports: [
-        ClientsModule.register([
-          {
-            name: serviceName,
-            transport: Transport.KAFKA,
-            options: {
-              producerOnlyMode: producerOnly,
-              client: {
-                clientId: clientId,
-                brokers: ["localhost:9092"],
-                logLevel: logLevel.ERROR,
+  static registerService(options: Options): DynamicModule {
+    return ClientsModule.registerAsync({
+      clients: [
+        {
+          name: options.serviceName,
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: async (configService: ConfigService) => {
+            return {
+              name: options.serviceName,
+              transport: Transport.KAFKA,
+              options: {
+                producerOnlyMode: options?.producerOnly ?? false,
+                client: {
+                  clientId: options.clientId,
+                  brokers: [configService.get<string>("KAFKA_BROKER")],
+                  logLevel: logLevel.ERROR,
+                },
+                consumer: {
+                  groupId: options.groupId,
+                  allowAutoTopicCreation: true,
+                },
               },
-              consumer: { groupId, allowAutoTopicCreation: true },
-            },
+            };
           },
-        ]),
+        },
       ],
-      providers: [ClientKafka],
-      exports: [ClientsModule, ClientKafka],
-    };
+    });
   }
 }
