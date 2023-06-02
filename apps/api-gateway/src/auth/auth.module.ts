@@ -14,7 +14,6 @@ import { AuthService } from "./auth.service";
       clientId: AUTH_CLIENT,
       groupId: AUTH_SERVICE_GROUP,
       serviceName: AUTH_SERVICE,
-      producerOnly: true,
     }),
   ],
   controllers: [AuthController],

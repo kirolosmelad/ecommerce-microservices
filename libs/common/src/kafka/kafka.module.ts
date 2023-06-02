@@ -40,6 +40,9 @@ export class KafkaModule {
                   groupId: options.groupId,
                   allowAutoTopicCreation: true,
                 },
+                producer: {
+                  allowAutoTopicCreation: true,
+                },
               },
             };
           },
