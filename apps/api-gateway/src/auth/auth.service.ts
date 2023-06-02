@@ -15,7 +15,11 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
   public createUser(createUserDto: CreateUserDto) {
     return this.authClient
       .send("create-user", JSON.stringify(createUserDto))
-      .pipe(map((response) => response));
+      .pipe<CreateUserDto & { id: number }>(
+        map<CreateUserDto & { id: number }, CreateUserDto & { id: number }>(
+          (response) => response
+        )
+      );
   }
 
   async onModuleInit() {
