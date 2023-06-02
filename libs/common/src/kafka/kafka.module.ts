@@ -20,6 +20,12 @@ export class KafkaModule {
           imports: [ConfigModule],
           inject: [ConfigService],
           useFactory: async (configService: ConfigService) => {
+            console.log(
+              `Connecting broker .. ${[
+                configService.get<string>("KAFKA_BROKER"),
+              ]}`
+            );
+
             return {
               name: options.serviceName,
               transport: Transport.KAFKA,

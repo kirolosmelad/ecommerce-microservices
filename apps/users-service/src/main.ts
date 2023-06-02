@@ -12,7 +12,7 @@ import { logLevel } from "@nestjs/microservices/external/kafka.interface";
       transport: Transport.KAFKA,
       options: {
         client: {
-          brokers: ["localhost:9092"],
+          brokers: [process.env.KAFKA_BROKER as string],
           logLevel: logLevel.ERROR,
         },
         consumer: {

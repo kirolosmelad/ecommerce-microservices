@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  zookeeper:
+    container_name: zookeeper
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+
+  kafka:
+    container_name: kafka
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    volumes:
+      - ./data/kafka:/var/run/docker.sock
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=kafka # should match this service name
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181 # should match zookeeper service name
+    depends_on:
+      - zookeeper
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8080:8080
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_CLUSTERS_0_NAME= local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS= kafka:9092
+      - DYNAMIC_CONFIG_ENABLED= "true" # not necessary, added for tests
+
+  apps:
+    container_name: apps
+    build: .
+    env_file:
+      - ./.env
+    ports:
+      - "3000:3000"
+    environment:
+      - KAFKA_BROKER= kafka:9092
+    depends_on:
+      - kafka
+
+volumes:
+  data: {}
+  api_db_data: {}
