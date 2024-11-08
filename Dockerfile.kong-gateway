@@ -1,0 +1,19 @@
+FROM kong
+
+USER root
+
+# Install Node.js and npm for Debian-based images
+RUN apt update && apt install -y nodejs npm && npm install -g kong-pdk
+
+# Copy the plugin code to the container
+COPY ./kong-plugins /usr/local/kong/js-plugins
+
+COPY ./kong-plugins/kong.conf /etc/kong/kong.conf
+
+# Reset back the defaults
+USER kong
+ENTRYPOINT ["/docker-entrypoint.sh"]
+EXPOSE 8000 8443 8001 8444
+STOPSIGNAL SIGQUIT
+CMD ["kong", "docker-start"]
+    
