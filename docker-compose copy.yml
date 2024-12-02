@@ -1,38 +1,65 @@
 networks:
-  ecommerce-net:
+  kong-net:
     driver: bridge
 
 services:
-  # postgresDB:
-  #   image: postgres:17
-  #   networks:
-  #     - ecommerce-net
-  #   ports:
-  #     - "6001:5432"
-  #   environment:
-  #     POSTGRES_USER: ${KONG_PG_USER}
-  #     POSTGRES_DB: ${KONG_PG_DB_NAME}
-  #     POSTGRES_PASSWORD: ${KONG_POSTGRES_PASSWORD}
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U ${KONG_PG_USER}"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
+  consul-server:
+    image: consul:1.15.4
+    networks:
+      - kong-net
+    ports:
+      - "8500:8500" # Consul HTTP API
+      - "8600:8600/udp" # Consul DNS
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      CONSUL_CLIENT_INTERFACE: eth0
+      CONSUL_LOCAL_CONFIG: |
+        {
+          "datacenter": "dc1",
+          "server": true,
+          "bootstrap_expect": 1,
+          "ui": true
+        }
+    command:
+      [
+        "agent",
+        "-server",
+        "-bind=0.0.0.0",
+        "-client=0.0.0.0",
+        "-ui",
+        "-datacenter=dc1",
+      ]
+
+  kong-database:
+    image: postgres:13
+    networks:
+      - kong-net
+    ports:
+      - "6001:5432"
+    environment:
+      POSTGRES_USER: ${KONG_PG_USER}
+      POSTGRES_DB: ${KONG_PG_DB_NAME}
+      POSTGRES_PASSWORD: ${KONG_POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KONG_PG_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kong-gateway-database-migration:
     build:
       context: .
       dockerfile: Dockerfile.kong-gateway
     networks:
-      - ecommerce-net
+      - kong-net
     environment:
       KONG_DATABASE: ${KONG_DATABASE}
       KONG_PG_HOST: ${KONG_PG_HOST}
       KONG_PG_USER: ${KONG_PG_USER}
       KONG_PG_PASSWORD: ${KONG_POSTGRES_PASSWORD}
-    # depends_on:
-    #   postgresDB:
-    #     condition: service_healthy
+    depends_on:
+      kong-database:
+        condition: service_healthy
     restart: "no"
     command: ["sh", "-c", "kong migrations bootstrap"]
 
@@ -41,7 +68,7 @@ services:
       context: .
       dockerfile: Dockerfile.kong-gateway
     networks:
-      - ecommerce-net
+      - kong-net
     environment:
       KONG_DATABASE: ${KONG_DATABASE}
       KONG_PG_HOST: ${KONG_PG_HOST}
@@ -64,8 +91,8 @@ services:
       - "8004:8004"
     restart: always
     depends_on:
-      # postgresDB:
-      #   condition: service_healthy
+      kong-database:
+        condition: service_healthy
       kong-gateway-database-migration:
         condition: service_completed_successfully
     command: ["kong", "docker-start"]
@@ -83,12 +110,15 @@ services:
         APP: auth
         PORT: 3000
     networks:
-      - ecommerce-net
+      - kong-net
     ports:
-      - "0:3000"
+      - "3000:3000"
     restart: always
     depends_on:
-      # postgresDB:
-      #   condition: service_healthy
-      kong-gateway:
-        condition: service_healthy
+      - consul-server
+    volumes:
+      - ./consul-config:/consul/config
+      - consul-auth-data:/consul/data # Volume for Consul data directory
+
+volumes:
+  consul-auth-data:

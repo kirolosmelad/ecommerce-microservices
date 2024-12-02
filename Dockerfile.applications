@@ -31,17 +31,9 @@ RUN npm install --only=production
 COPY --from=builder /app/dist/apps/${APP} ./dist/apps/${APP}
 COPY apps/${APP}/.env .
 
-# Install Consul agent
-RUN apk add --no-cache curl unzip && \
-    curl -Lo consul.zip https://releases.hashicorp.com/consul/1.15.4/consul_1.15.4_linux_amd64.zip && \
-    unzip consul.zip && \
-    mv consul /usr/local/bin/ && \
-    rm consul.zip
 
 # Expose the application port
 EXPOSE ${PORT}
 
-# Run Consul agent and the application
-CMD sh -c "\
-  consul agent -config-dir=/consul/config & \
-  node dist/apps/$APP/main.js"
+# Run
+CMD sh -c "node dist/apps/$APP/main.js"
